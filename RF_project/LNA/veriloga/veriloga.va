@@ -1,0 +1,52 @@
+// VerilogA for RF_project, LNA, veriloga
+
+`include "constants.vams"
+`include "disciplines.vams"
+
+module LNA(VIP, VIN, VOP, VON);
+	input VIP,VIN;
+	output VOP,VON;
+	electrical VIP, VIN;
+	electrical VOP, VON;
+	electrical VIP_N;
+
+	// PARAMETERS
+	parameter gain = 20;	// Voltage in dB
+	parameter NF = 10;	// Noise in dB
+	parameter IIP3 = -20;		//IIP3 in dBm
+	
+	// iout*rout = a*vi + b*vi^2 + c*vi^3
+	real a, c, vin, Aip3;
+	real rin = 50;
+	real rout = 50;
+	real k, NF_val, N_Rs, N_IPR;
+	real Rs;
+	real vout; 
+
+	analog begin
+		vin = V(VIP_N,VIN);
+		a = pow(10,gain/20.0);
+		Aip3 = sqrt(1E-3*50*pow(10,IIP3/10)); // Peak Aip3 voltage
+		// Noise analysis
+		k = 1.38E-23; Rs = 50;
+		NF_val = pow(10,NF/10);
+		N_Rs = 4*k*$temperature*Rs;
+		N_IPR = (NF_val - 1)*N_Rs;
+		
+		c = 4*a/(3*pow(Aip3,2));
+
+		// Load the input with input resistance
+		I(VIP_N, VIN)<+ V(VIP_N,VIN)/rin;
+		
+		// Output voltage vo
+		vout = a*vin - c*vin*vin*vin;
+
+		// Load the output voltgae with resistor
+		I(VOP,VON) <+ (-vout + V(VOP,VON))/rout;
+
+		//Input noise
+		V(VIP,VIP_N) <+ white_noise(N_IPR, " LNA Noise");
+
+	end
+endmodule
+
