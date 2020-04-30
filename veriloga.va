@@ -1,0 +1,57 @@
+// VerilogA for RF_project, MIXER, veriloga
+
+`include "constants.vams"
+`include "disciplines.vams"
+
+module MIXER(VRF_P,VRF_N,VLO_P,VLO_N,VIF_P,VIF_N);
+	input VRF_P,VRF_N,VLO_P,VLO_N;
+	electrical VRF_P,VRF_N,VLO_P,VLO_N;
+
+	output VIF_P,VIF_N;
+	electrical VIF_P,VIF_N;
+
+	electrical VRF_in ;
+
+	// parameters gm1, gm2, Rd, vnin, eq overdrv, LO peak vg
+	parameter real gm1 = 10E-3;
+	parameter real gm2 = 2E-3;
+	parameter real Rd = 1E3;
+	parameter real Vov = 0.17;
+	parameter real Vplo = 1.8;
+	parameter real flo = 1.8E9;
+	real gama = 0.667;
+	real pi = 3.1428;
+	real dT = Vov/(10*pi*Vplo*flo);
+	real k = 1.38E-23;
+
+	// parameters
+	real Av;
+	real rin = 50; real rout = 50;
+	real num1, num2, den, N_PWR;
+
+	// variables
+	real vrf, vlo, vif;
+
+	analog begin
+		vrf = V(VRF_in,VRF_N);
+		I(VRF_in,VRF_N) <+ V(VRF_in,VRF_N)/rin;
+
+		vlo = V(VLO_P,VLO_N);
+
+		Av= (2/pi)*gm1*Rd*( 1 - (2*dT*flo));
+		num1 = 8*k*$temperature*Rd*( (gama*gm2*Rd) + 1)*2*dT*flo;
+		num2 = 4*k*$temperature*Rd*(gama*gm1*Rd + 2)*(1-(2*dT*flo));
+		den = pow(2*gm1*Rd/pi,2)*pow((1-(2*dT*flo)),2);
+		N_PWR = (num1+num2)/den;
+
+		I(VRF_P,VRF_in) <+ V(VRF_P,VRF_in)/rin;
+
+		// 
+		vif = Av*vrf*vlo;
+		I(VIF_P,VIF_N) <+ (-vif + V(VIF_P,VIF_N))/rout;
+
+		//
+		V(VRF_P,VRF_in) <+white_noise(N_PWR,"MIXER NOISE");
+	end
+
+endmodule
