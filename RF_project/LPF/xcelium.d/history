@@ -1,8 +1,0 @@
-//
-// File created by:  xrun
-// Do not modify this file
-
-s1::(18Mar2020:01:14:46):( /softwares/cadence/XCELIUM18/tools.lnx86/bin/64bit/irun loopfilter_tb.sv loopfilter.sv -access +rw )
-s2::(18Mar2020:01:49:56):( /softwares/cadence/XCELIUM18/tools.lnx86/bin/64bit/irun loopfilter_tb.sv loopfilter.sv -access +rw +gui )
-s3::(18Mar2020:01:52:36):( /softwares/cadence/XCELIUM18/tools.lnx86/bin/64bit/irun loopfilter_tb.sv loopfilter.sv -access +rw +gui )
-s4::(18Mar2020:01:55:06):( /softwares/cadence/XCELIUM18/tools.lnx86/bin/64bit/irun loopfilter_tb.sv loopfilter.sv -access +rw +gui )

@@ -1,9 +1,0 @@
-// VerilogA for RF_project, LNA_test, veriloga
-
-`include "constants.vams"
-`include "disciplines.vams"
-
-module LNA_test;
-
-
-endmodule
