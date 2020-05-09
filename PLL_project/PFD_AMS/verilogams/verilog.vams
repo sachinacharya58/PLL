@@ -1,0 +1,59 @@
+//Verilog-AMS HDL for "PLL_project", "PFD_AMS" "verilogams"
+
+`include "constants.vams"
+`include "disciplines.vams"
+
+`timescale 1s/1ps
+module PFD_AMS (VIN1,VIN2,UP,DOWN);
+
+	input VIN1,VIN2;
+	output UP,DOWN;
+	electrical VIN1,VIN2,UP,DOWN;
+
+	real vsup = 1.8;
+	real vth = 0.9;
+	real up1;
+	real down1;
+	real one_pico = 1e-12;
+	integer wait_flag1;
+	integer wait_flag2;
+
+	always @(posedge wait_flag1) begin
+		#100p;
+	end
+
+	always @(posedge wait_flag2) begin
+		#100p;
+	end
+
+	analog begin
+/*		@(initial_step or cross(V(VIN1)-vth,1,1n,0.01) begin
+			up1 = V(VIN1)>vth;
+			down1 = V(VIN2)>vth;
+		end			*/
+			
+		@(initial_step or cross(V(VIN1)-vth,1,1n,0.01)) begin
+			up1 =  V(VIN1)>vth;
+			if(down1 == 1) begin
+				wait_flag1 = 1;
+				@(negedge wait_flag1);
+				up1 =  0.0; down1 = 0.0; end
+			else
+				up1 =  V(VIN1)>vth;
+		end
+		@(initial_step or cross(V(VIN2)-vth,1,1n,0.01)) begin
+			down1 = V(VIN2)>vth;
+			if(up1 == 1) begin
+				wait_flag2 = 1;
+				@(negedge wait_flag2);
+				down1 = 0.0; up1 = 0.0; end
+			else
+				down1 = V(VIN2)>vth;
+		end
+	V(UP)   <+ transition(up1*vsup,0,1p,1p);
+	V(DOWN) <+ transition(down1*vsup,0,1p,1p);
+
+	end
+
+
+endmodule

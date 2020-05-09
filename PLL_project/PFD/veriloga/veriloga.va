@@ -1,0 +1,112 @@
+// VerilogA for PLL_project, PFD, veriloga
+
+`include "constants.vams"
+`include "disciplines.vams"
+
+`timescale 1ps/1ps
+module PFD(VIN1,VIN2,UP,DOWN,UP_FLAG,DN_FLAG,UP_DELAY,DN_DELAY);
+	inout 	  VIN1,VIN2,UP,DOWN,UP_FLAG,DN_FLAG,UP_DELAY,DN_DELAY;
+	electrical VIN1,VIN2,UP,DOWN,UP_FLAG,DN_FLAG,UP_DELAY,DN_DELAY;
+
+//	electrical 
+	real vsup = 1.8;
+	real vth = vsup/2.0;
+	real up1;
+	real down1 = 0.0;
+	real one_pico = 2E-12;
+	real up_del_flag = 0;
+	real dn_del_flag = 0;
+	real delay_flag;
+	real up_delay;
+	real down_delay;
+	real up1_del, up_check , dn_check2;
+	real dn1_del, dn_check , up_check2;
+
+
+	analog begin
+		@(initial_step) begin
+			up1 = V(VIN1)>vth;
+			down1 = V(VIN2)>vth;
+			if(up1 == 1.0) begin
+				up_delay = 200E-12;	end
+			else begin
+				up_delay = 0.0;	end
+			if(down1 == 1.0) begin
+				down_delay = 200E-12;	end
+			else begin
+				down_delay = 0.0;	end
+		end			
+			
+		@(cross(V(VIN1)-vth,1,1n,0.01)) begin
+			up1 =  V(VIN1)>vth;
+			if(down1 == 1) begin
+				up_del_flag = 1;  end
+			else begin 
+				up_del_flag = 0; end
+		end
+
+		@(cross(V(VIN2)-vth,1,1n,0.01)) begin
+			down1 = V(VIN2)>vth; 
+			if(up1 == 1) begin
+				dn_del_flag = 1;  end
+			else begin
+				dn_del_flag = 0;  end
+		end
+
+		@(cross(up_del_flag-vth,1,1m,1n)) begin
+			if (up_del_flag == 1) begin
+				up_delay = 200E-12; //down1 = 0.0; 
+			end
+/*			else begin
+				up_delay = 0.0; end*/
+		end
+
+		@(cross(dn_del_flag-vth,1,1m,1n)) begin
+			if (dn_del_flag == 1) begin
+				down_delay = 200E-12;
+			end
+/*			else begin
+				down_delay = 0.0; end*/
+		end
+		@(cross (V(UP)-vth,-1,1m,1n)  or cross (V(DOWN)-vth,-1,1m,1n) ) begin
+			if(V(UP)<vth) begin
+				up_check =  1.0; end
+			else begin up_check = 0.0; end
+
+			if (V(DOWN)<vth) begin
+				dn_check =  1.0; end
+			else begin dn_check = 0.0; end
+				
+			if (up_check == 1) begin
+//			$display("I GOT EXECUTED %e",$realtime);
+				up_delay = 0.0; 
+			end
+			if(dn_check == 1) begin
+				down_delay = 0.0; end
+		end
+
+		@(cross (V(DOWN)-vth,1,1m,1n) or cross(dn_del_flag-0.5,0,1m,1n) or initial_step ) begin
+			dn_check2 =  V(DOWN)>vth;
+			if(dn_del_flag == 1 && dn_check2 == 1) begin
+				down1 = 0.0; up1 = 0.0;
+			end
+		end
+
+		@(cross (V(UP)-vth,1,1m,1n) or cross(up_del_flag-0.5,0,1m,1n) or initial_step ) begin
+			up_check2 = V(UP)>vth;
+			if (up_del_flag == 1 && up_check2 ==1) begin
+				up1 = 0.0; down1 = 0.0;
+			end							
+		end
+
+	V(UP)   <+ transition(up1,up_delay,1p,1p);
+	V(DOWN) <+ transition(down1,down_delay,1p,1p);
+	V(UP_FLAG) <+ transition(up_check,0,1p,1p);
+	V(DN_FLAG) <+ transition(dn_check,0,1p,1p);
+	V(UP_DELAY) <+ transition(up_delay,0,1p,1p);
+	V(DN_DELAY) <+ transition(down_delay,0,1p,1p);
+
+	end
+
+
+endmodule

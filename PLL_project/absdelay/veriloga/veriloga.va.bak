@@ -1,0 +1,34 @@
+// VerilogA for PLL_project, absdelay, veriloga
+
+`include "constants.vams"
+`include "disciplines.vams"
+
+module absdelay_test(OP,VIN);
+
+	input VIN; output OP;
+	electrical VIN, OP;
+	real v_VIN = 0.0; real enable = 0;
+
+	real vth1;
+	real vth2; real vth;
+	analog begin
+		v_VIN = absdelay(V(VIN),100E-12);
+//		@(cross(V(VIN)-vth,0,	1m,1n) or initial_step) begin
+//			enable = 1.0;
+			vth1 = v_VIN + vth;
+			vth2 = v_VIN - vth;
+		end
+/*		@(cross(V(VIN)-vth1,0,vtol,ttol)) begin
+			if (enable ==1) begin 	v_VIN = V(VIN); end
+			vth1 = v_VIN + vth;
+			vth2 = v_VIN - vth;
+		end
+		@(cross(V(VIN)-vth2,0,vtol,ttol)) begin
+			if (enable ==1) begin 	v_VIN = V(VIN); end
+			vth1 = v_VIN + vth;
+			vth2 = v_VIN - vth;
+		end*/
+			V(OP) <+ transition(v_VIN,0,1p,1p);
+
+	end
+endmodule

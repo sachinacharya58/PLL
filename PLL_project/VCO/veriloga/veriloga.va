@@ -1,0 +1,53 @@
+// VerilogA for PLL_project, VCO, veriloga
+
+`include "constants.vams"
+`include "disciplines.vams"
+
+module VCO(VIN,CLK_OUT);
+
+	inout VIN,CLK_OUT;
+	electrical VIN, CLK_OUT;
+
+	real vsup = 1.8;
+	real x = 0;
+	real vth = 0.1; real vtol = 1m; real ttol = 1n;	
+	real v_VIN = 0.0; real enable = 0;
+	
+	real vth1 = 0.0;
+	real vth2 = 0.0;
+	real f0 = 3.2e9; real K_VCO = 1.35e9;
+	real f_OUT = f0; real prd_OUT;
+	analog begin
+		@(cross(V(VIN)-vth,0,	vtol,ttol) or initial_step) begin
+			v_VIN = V(VIN);
+			enable = 1;
+			vth1 = v_VIN + vth;
+			vth2 = v_VIN - vth;
+		end
+		@(cross(V(VIN)-vth1,0,vtol,ttol)) begin
+			if (enable ==1) begin 	v_VIN = V(VIN); end
+			vth1 = v_VIN + vth;
+			vth2 = v_VIN - vth;
+		end
+		@(cross(V(VIN)-vth2,0,vtol,ttol)) begin
+			if (enable ==1) begin 	v_VIN = V(VIN); end
+			vth1 = v_VIN + vth;
+			vth2 = v_VIN - vth;
+		end
+		
+		f_OUT = f0 + K_VCO*v_VIN;
+		prd_OUT = 1/f_OUT;
+		
+		@(timer(0,prd_OUT/2)) begin  x=!x; end
+
+		V(CLK_OUT) <+ transition(x?vsup:0.0, 0,1p,1p);
+//		f_out = 
+/*		@(cross(V(VIN)-vth,0,	vtol,ttol)) begin
+			v_VIN = V(VIN);
+			enable = 1;
+		end */
+
+		
+	end
+
+endmodule

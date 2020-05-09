@@ -1,0 +1,84 @@
+// VerilogA for PLL_project, FRAC_DVDR, veriloga
+
+`include "constants.vams"
+`include "disciplines.vams"
+
+module FRAC_DVDR(A0, A1, A2, A3, A4, A5, VIN, VOUT,PRD);
+
+input A0, A1, A2, A3, A4, A5, VIN;
+output VOUT,PRD;
+
+electrical A0, A1, A2, A3, A4, A5, VIN, VOUT,PRD;
+
+parameter real vsup 			= 1.2;
+parameter real vtrans 			= 0.6;
+parameter real scaling_factor 	= 1;
+//parameter real period = 10m;
+
+real sig_A0, sig_A1, sig_A2, sig_A3, sig_A4, sig_A5;
+integer dig_A0, dig_A1, dig_A2, dig_A3, dig_A4, dig_A5,dig_VIN,dig_in;
+integer dig_VOUT;
+real period,in_period;
+real cur_time;
+real old_time;
+real temp_period;
+integer check_period;
+integer x;
+real one_pico;
+
+analog begin
+
+  @(initial_step) begin
+	cur_time = 0.0; old_time = 0.0; temp_period = 0.0; check_period = 0; one_pico = 1E-12;
+	dig_VIN = V(VIN)-vtrans; x = dig_VIN;
+	dig_A0 = V(A0) > vtrans;
+	dig_A1 = V(A1) > vtrans;
+	dig_A2 = V(A2) > vtrans;
+	dig_A3 = V(A3) > vtrans;
+	dig_A4 = V(A4) > vtrans;
+	dig_A5 = V(A5) > vtrans;
+ end
+
+
+  @(cross ( V(VIN)-vtrans,1,one_pico)) begin
+	dig_VIN = V(VIN)-vtrans;
+	cur_time = $abstime;
+	in_period   = cur_time - old_time;
+	old_time = cur_time;
+  end 
+  
+
+  @ (cross ( V(A0)-vtrans,0,one_pico))
+	dig_A0 = V(A0) > vtrans;
+
+  @ (cross ( V(A1)-vtrans,0,one_pico))
+	dig_A1 = V(A1) > vtrans;
+
+  @ (cross ( V(A2)-vtrans,0,one_pico))
+	dig_A2 = V(A2) > vtrans;
+
+  @ (cross ( V(A3)-vtrans,0,one_pico))
+	dig_A3 = V(A3) > vtrans;
+
+  @ (cross ( V(A4)-vtrans,0,one_pico))
+	dig_A4 = V(A4) > vtrans;
+
+  @ (cross ( V(A5)-vtrans,0,one_pico))
+	dig_A5 = V(A5) > vtrans;
+
+	dig_in = dig_A0*32 + dig_A1*16 + dig_A2*8 + dig_A3*4 + dig_A4*2 + dig_A5*1;
+    temp_period = dig_in*in_period*scaling_factor;
+
+    check_period = temp_period > 100E-12;
+    period = (check_period == 1)?temp_period:0.0;
+
+
+
+  @(timer(0, period/2)) begin x = !x ; end
+
+  V(VOUT) <+ transition((x==1)?vsup:0.0, 0.0, 1p,1p ) ;
+  V(PRD) <+ transition(period, 0.0, 1p );
+
+end
+
+endmodule

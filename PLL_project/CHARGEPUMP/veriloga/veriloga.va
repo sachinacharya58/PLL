@@ -1,0 +1,28 @@
+// VerilogA for PLL_project, CHARGEPUMP, veriloga
+
+`include "constants.vams"
+`include "disciplines.vams"
+
+module CHARGEPUMP(VDD,VSS,UP,DOWN,VOUT);
+	inout VDD,VSS,UP,DOWN,VOUT;
+	electrical VDD,VSS,UP,DOWN,VOUT;
+	real I_CP = 10u;
+	real vsup = 1.8;
+	real vth = vsup/2.0;
+	real CP_UP = 0.0;
+	real CP_DN = 0.0;
+	analog begin
+		@(cross(V(UP)-vth,0,1n,0.01)) begin
+				CP_UP =  V(UP)>vth;
+		end
+
+		@(cross(V(DOWN)-vth,0,1n,0.01)) begin
+				CP_DN =  V(DOWN)>vth;
+		end
+
+		I(VDD,VOUT) <+ transition(CP_UP*I_CP,0,1n,1n);
+		I(VOUT,VSS) <+ transition(CP_DN*I_CP,0,1n,1n);
+	end
+
+
+endmodule
